@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "tethysdash_plugin-hydroserver"
+authors = [{ name = "Aquaveo LLC", email = "ysun@aquaveo.com" }]
+license = { file = "LICENSE" }
+readme = "README.md"
+classifiers = ["License :: OSI Approved :: MIT License"]
+version = "0.0.1"
+description = "Hydroserver visualizations plugin for tethysdash"
+requires-python = ">=3.9"
+dependencies = [
+    "intake>=0.6.6",
+    "pandas>=2.2.3",
+    "requests>=2.32.3",
+    "hydroserverpy"
+]
+
+[project.urls]
+Homepage = "https://github.com/FIRO-Tethys/tethysdash_plugin-hydroserver"
+Issues = "https://github.com/FIRO-Tethys/tethysdash_plugin-hydroserver/issues"
+
+[project.entry-points."intake.drivers"]
+hydroserver_map = "hydroserver_visualizations.map:Map"
+hydroserver_table = "hydroserver_visualizations.table:Table"
+hydroserver_datastream_finder = "hydroserver_visualizations.datastream_finder:DatastreamFinder"
+hydroserver_plot = "hydroserver_visualizations.plot:Plot"
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+include = ["*"]
+
+[tool.setuptools.package-data]
+"hydroserver_visualizations" = ["static/*.png", "*.json"]
