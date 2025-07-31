@@ -34,7 +34,9 @@ class Map(base.DataSource):
     container = "python"
     version = "0.0.1"
     name = "hydroserver_map"
-    visualization_args = {}
+    visualization_args = {
+        "endpoint": "text"
+    }  # TODO make hydroserver endpoint a text input
     visualization_tags = [
         "hydroserver",
         "map"
@@ -45,11 +47,12 @@ class Map(base.DataSource):
     visualization_type = "map"
     _user_parameters = []
 
-    def __init__(self, metadata=None, **kwargs):
+    def __init__(self, endpoint, metadata=None, **kwargs):
+        self.endpoint = endpoint
         super(Map, self).__init__(metadata=metadata)
 
     def read(self):
-        hs_api = HydroServer(host='https://playground.hydroserver.org')
+        hs_api = HydroServer(host=self.endpoint)
         public_things = hs_api.things.list()
         features = [thing_to_geojson_feature(thing) for thing in public_things]
         geojson = {

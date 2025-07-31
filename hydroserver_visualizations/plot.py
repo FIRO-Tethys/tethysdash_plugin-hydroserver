@@ -17,6 +17,7 @@ class Plot(base.DataSource):
         "The plot of timeseries for the selected datastream"
     )
     visualization_args = {
+        "endpoint": "text",
         "datastream_uid": "text"
     }
     visualization_group = "Hydroserver"
@@ -24,41 +25,34 @@ class Plot(base.DataSource):
     visualization_type = "plotly"
     _user_parameters = []
 
-    def __init__(self, datastream_uid, metadata=None):
+    def __init__(self, endpoint, datastream_uid, metadata=None):
+        self.endpoint = endpoint
         self.datastream_uid = datastream_uid
         super(Plot, self).__init__(metadata=metadata)
 
     def read(self):
-        # Get a datastream
-        hs_api = HydroServer(host='https://playground.hydroserver.org')
+        hs_api = HydroServer(host=self.endpoint)
         datastream = hs_api.datastreams.get(uid=self.datastream_uid)
 
-        # Get observations of a datastream between two timestamps
-        # observations_df = datastream.get_observations(
-        #     start_time=datetime(year=2023, month=1, day=1),
-        #     end_time=datetime(year=2023, month=12, day=31)
-        # )
-
-        # Get observations all observations of a datastream
+        # Get observations of a datastream
         df_full_observation = datastream.get_observations(fetch_all=True)
         df_full_observation['date'] = pd.to_datetime(df_full_observation['timestamp'])
         df_full_observation['date'] = df_full_observation['date'].dt.tz_convert(None)
         df_full_observation['value'] = df_full_observation['value'].clip(lower=0)
-        print("type: ", df_full_observation['date'].dtype)
-        print("date: ", df_full_observation['date'].head())
+
         plot = go.Figure()
         plot.add_trace(go.Scatter(
             x=df_full_observation['date'].to_list(),
             y=df_full_observation['value'],
             mode='lines',
             name='Observations',
-            # marker=dict(color='rgb(0, 166, 255)')
         ))
         plot.update_layout(
             xaxis_title='Date',
             yaxis_title='Value',
             xaxis=dict(tickformat='%Y-%m-%d', tickangle=45)
         )
+
         data = []
         for trace in plot.data:
             trace_json = trace.to_plotly_json()
