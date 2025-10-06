@@ -35,8 +35,8 @@ class Map(base.DataSource):
     version = "0.0.1"
     name = "hydroserver_map"
     visualization_args = {
-        "endpoint": "text"
-    }  # TODO make hydroserver endpoint a text input
+        "endpoint": "text",
+    }
     visualization_tags = [
         "hydroserver",
         "map"
@@ -45,6 +45,7 @@ class Map(base.DataSource):
     visualization_group = "Hydroserver"
     visualization_label = "Hydroserver Map"
     visualization_type = "map"
+    visualization_attribution = "hydroserverpy"
     _user_parameters = []
 
     def __init__(self, endpoint, metadata=None, **kwargs):
