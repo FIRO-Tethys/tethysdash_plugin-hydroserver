@@ -23,6 +23,7 @@ class Plot(base.DataSource):
     visualization_group = "Hydroserver"
     visualization_label = "Hydroserver Plot"
     visualization_type = "plotly"
+    visualization_attribution = "hydroserverpy"
     _user_parameters = []
 
     def __init__(self, endpoint, datastream_uid, metadata=None):
