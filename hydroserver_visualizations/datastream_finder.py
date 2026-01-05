@@ -26,10 +26,10 @@ class DatastreamFinder(base.DataSource):
         Read the data for the datastream from the hydroserver service.
         """
         hs_api = HydroServer(host='https://playground.hydroserver.org')
-        streams = hs_api.datastreams.list(thing=self.thing_uid)
+        streams = hs_api.datastreams.list(thing=self.thing_uid, fetch_all=True)
         streams_dropdown = [
             {'label': str(stream.uid), 'value': str(stream.uid)}
-            for stream in streams
+            for stream in streams.items
         ]
         return {
             "variable_name": "Datastream",

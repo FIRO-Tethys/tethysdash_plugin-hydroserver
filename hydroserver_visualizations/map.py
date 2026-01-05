@@ -21,8 +21,6 @@ def thing_to_geojson_feature(thing):
             "sampling_feature_type": thing.sampling_feature_type,
             "sampling_feature_code": thing.sampling_feature_code,
             "site_type": thing.site_type,
-            # "tags": thing.tags,
-            # "photos": thing.photos,
             "data_disclaimer": thing.data_disclaimer,
             "is_private": thing.is_private,
             "uid": str(thing.uid)
@@ -54,8 +52,8 @@ class Map(base.DataSource):
 
     def read(self):
         hs_api = HydroServer(host=self.endpoint)
-        public_things = hs_api.things.list()
-        features = [thing_to_geojson_feature(thing) for thing in public_things]
+        public_things = hs_api.things.list(fetch_all=False)
+        features = [thing_to_geojson_feature(thing) for thing in public_things.items]
         geojson = {
             "type": "FeatureCollection",
             "name": "Hydroservers",

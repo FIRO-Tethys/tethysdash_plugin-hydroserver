@@ -1,6 +1,6 @@
 from intake.source import base
-import numpy as np
 import pandas as pd
+import json
 import plotly.graph_objects as go
 from hydroserverpy import HydroServer
 
@@ -36,10 +36,11 @@ class Plot(base.DataSource):
         datastream = hs_api.datastreams.get(uid=self.datastream_uid)
 
         # Get observations of a datastream
-        df_full_observation = datastream.get_observations(fetch_all=True)
-        df_full_observation['date'] = pd.to_datetime(df_full_observation['timestamp'])
+        observation = datastream.get_observations(fetch_all=True)
+        df_full_observation = observation.dataframe
+        df_full_observation['date'] = pd.to_datetime(df_full_observation['phenomenon_time'])
         df_full_observation['date'] = df_full_observation['date'].dt.tz_convert(None)
-        df_full_observation['value'] = df_full_observation['value'].clip(lower=0)
+        df_full_observation['value'] = df_full_observation['result'].clip(lower=0)
 
         plot = go.Figure()
         plot.add_trace(go.Scatter(
@@ -54,14 +55,4 @@ class Plot(base.DataSource):
             xaxis=dict(tickformat='%Y-%m-%d', tickangle=45)
         )
 
-        data = []
-        for trace in plot.data:
-            trace_json = trace.to_plotly_json()
-            if "x" in trace_json and isinstance(trace_json["x"], np.ndarray):
-                trace_json["x"] = trace_json["x"].tolist()
-            if "y" in trace_json and isinstance(trace_json["y"], np.ndarray):
-                trace_json["y"] = trace_json["y"].tolist()
-            data.append(trace_json)
-        layout = plot.to_plotly_json()["layout"]
-        config = {"autosizable": True, "responsive": True}
-        return {"data": data, "layout": layout, "config": config}
+        return json.loads(plot.to_json())
