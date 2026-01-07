@@ -1,6 +1,6 @@
 from intake.source import base
-from hydroserverpy import HydroServer
 from tethysapp.tethysdash.plugin_helpers import LayerConfigurationBuilder
+from .util import login_to_hydroserver
 
 
 def thing_to_geojson_feature(thing):
@@ -34,6 +34,7 @@ class Map(base.DataSource):
     name = "hydroserver_map"
     visualization_args = {
         "endpoint": "text",
+        "api_key": "text"
     }
     visualization_tags = [
         "hydroserver",
@@ -46,14 +47,21 @@ class Map(base.DataSource):
     visualization_attribution = "hydroserverpy"
     _user_parameters = []
 
-    def __init__(self, endpoint, metadata=None, **kwargs):
+    def __init__(self, endpoint, api_key=None, metadata=None, **kwargs):
         self.endpoint = endpoint
+        self.api_key = api_key
         super(Map, self).__init__(metadata=metadata)
 
     def read(self):
-        hs_api = HydroServer(host=self.endpoint)
-        public_things = hs_api.things.list(fetch_all=False)
-        features = [thing_to_geojson_feature(thing) for thing in public_things.items]
+        hs_api = login_to_hydroserver(self.endpoint, self.api_key)
+        if self.api_key:
+            workspaces = hs_api.workspaces.list(fetch_all=True)
+            features = []
+            for workspace in workspaces.items:
+                features.extend([thing_to_geojson_feature(thing) for thing in workspace.things])
+        else:
+            public_things = hs_api.things.list(fetch_all=False)
+            features = [thing_to_geojson_feature(thing) for thing in public_things.items]
         geojson = {
             "type": "FeatureCollection",
             "name": "Hydroservers",
