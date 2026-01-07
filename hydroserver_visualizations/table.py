@@ -1,8 +1,8 @@
 from intake.source import base
 import pandas as pd
-import numpy as np
 import plotly.graph_objects as go
-from hydroserverpy import HydroServer
+import json
+from .util import login_to_hydroserver
 
 
 class Table(base.DataSource):
@@ -12,6 +12,8 @@ class Table(base.DataSource):
     visualization_description = ("Hydroserver datastreams table")
     visualization_tags = ["hydroserver", "datastreams", "table"]
     visualization_args = {
+        "endpoint": "text",
+        "api_key": "text",
         "thing_uid": "text"
     }
     visualization_group = "Hydroserver"
@@ -20,38 +22,34 @@ class Table(base.DataSource):
     visualization_attribution = "hydroserverpy"
     _user_parameters = []
 
-    def __init__(self, thing_uid, metadata=None):
+    def __init__(self, endpoint, thing_uid, api_key=None, metadata=None):
+        self.endpoint = endpoint
         self.thing_uid = thing_uid
+        self.api_key = api_key
         super(Table, self).__init__(metadata=metadata)
 
     def read(self):
-        columns = ['uid', 'is_private', 'is_visible']
-        hs_api = HydroServer(host='https://playground.hydroserver.org')
+        columns = ['uid', 'name', 'is_private', 'is_visible']
+        hs_api = login_to_hydroserver(endpoint=self.endpoint, api_key=self.api_key)
         streams = hs_api.datastreams.list(thing=self.thing_uid)
-        streams_dict = [{col: stream.__getattribute__(col) for col in columns} for stream in streams]
+        streams_dict = [{col: stream.__getattribute__(col) for col in columns} for stream in streams.items]
+
+        def estimate_col_width(series, min_width=50, scale=7):
+            max_len = max(len(str(v)) for v in series)
+            return max(min_width, max_len * scale)
+
         df = pd.DataFrame(streams_dict)
         plot = go.Figure(data=[go.Table(
-            header=dict(
-                values=columns,
-                # fill_color='rgba(0, 0, 0, 0)'
+                header=dict(
+                    values=columns,
+                ),
+                cells=dict(
+                    values=[df[col] for col in df.columns],
+                ),
+                columnwidth=[estimate_col_width(df[col]) for col in df.columns],
             ),
-            cells=dict(
-                values=[df[col] for col in df.columns],
-            ))
         ])
-
-        data = []
-        for trace in plot.data:
-            trace_json = trace.to_plotly_json()
-            if 'x' in trace_json and isinstance(trace_json['x'], np.ndarray):
-                trace_json['x'] = trace_json['x'].tolist()
-            if 'y' in trace_json and isinstance(trace_json['y'], np.ndarray):
-                trace_json['y'] = trace_json['y'].tolist()
-            data.append(trace_json)
-        layout = plot.to_plotly_json()["layout"]
-        config = {'autosizable': True, 'responsive': True}
-        return {
-            "data": data,
-            "layout": layout,
-            "config": config
-        }
+        plot.update_layout(
+            margin=dict(l=20, r=20, t=20, b=20)
+        )
+        return json.loads(plot.to_json())
