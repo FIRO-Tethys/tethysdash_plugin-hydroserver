@@ -1,5 +1,5 @@
 from intake.source import base
-from hydroserverpy import HydroServer
+from .util import login_to_hydroserver
 
 
 class DatastreamFinder(base.DataSource):
@@ -11,13 +11,17 @@ class DatastreamFinder(base.DataSource):
         "Provides all available datastreams for a selected hydroserver"
     )
     visualization_args = {
-        "thing_uid": "text",
+        "endpoint": "text",
+        "api_key": "text",
+        "thing_uid": "text"
     }
     visualization_group = "Hydroserver"
     visualization_label = "Hydroserver Datastreams Finder"
     visualization_type = "variable_input"
 
-    def __init__(self, thing_uid, metadata=None):
+    def __init__(self, endpoint, thing_uid, api_key=None, metadata=None):
+        self.endpoint = endpoint
+        self.api_key = api_key
         self.thing_uid = thing_uid
         super().__init__(metadata=metadata)
 
@@ -25,7 +29,7 @@ class DatastreamFinder(base.DataSource):
         """
         Read the data for the datastream from the hydroserver service.
         """
-        hs_api = HydroServer(host='https://playground.hydroserver.org')
+        hs_api = login_to_hydroserver(endpoint=self.endpoint, api_key=self.api_key)
         streams = hs_api.datastreams.list(thing=self.thing_uid, fetch_all=True)
         streams_dropdown = [
             {'label': str(stream.uid), 'value': str(stream.uid)}
