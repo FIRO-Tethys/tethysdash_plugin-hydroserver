@@ -34,7 +34,8 @@ class Map(base.DataSource):
     name = "hydroserver_map"
     visualization_args = {
         "endpoint": "text",
-        "api_key": "text"
+        "api_key": "text",
+        "private_data_only": "checkbox"
     }
     visualization_tags = [
         "hydroserver",
@@ -47,15 +48,16 @@ class Map(base.DataSource):
     visualization_attribution = "hydroserverpy"
     _user_parameters = []
 
-    def __init__(self, endpoint, api_key=None, metadata=None, **kwargs):
+    def __init__(self, endpoint, api_key=None, private_data_only=False, metadata=None, **kwargs):
         self.endpoint = endpoint
         self.api_key = api_key
+        self.private_data_only = private_data_only
         super(Map, self).__init__(metadata=metadata)
 
     def read(self):
         hs_api = login_to_hydroserver(self.endpoint, self.api_key)
         if self.api_key:
-            workspaces = hs_api.workspaces.list(fetch_all=True)
+            workspaces = hs_api.workspaces.list(fetch_all=False, is_private=self.private_data_only)
             features = []
             for workspace in workspaces.items:
                 features.extend([thing_to_geojson_feature(thing) for thing in workspace.things])

@@ -1,7 +1,7 @@
 from intake.source import base
 import pandas as pd
-import numpy as np
 import plotly.graph_objects as go
+import json
 from hydroserverpy import HydroServer
 
 
@@ -28,7 +28,7 @@ class Table(base.DataSource):
         columns = ['uid', 'is_private', 'is_visible']
         hs_api = HydroServer(host='https://playground.hydroserver.org')
         streams = hs_api.datastreams.list(thing=self.thing_uid)
-        streams_dict = [{col: stream.__getattribute__(col) for col in columns} for stream in streams]
+        streams_dict = [{col: stream.__getattribute__(col) for col in columns} for stream in streams.items]
         df = pd.DataFrame(streams_dict)
         plot = go.Figure(data=[go.Table(
             header=dict(
@@ -39,19 +39,4 @@ class Table(base.DataSource):
                 values=[df[col] for col in df.columns],
             ))
         ])
-
-        data = []
-        for trace in plot.data:
-            trace_json = trace.to_plotly_json()
-            if 'x' in trace_json and isinstance(trace_json['x'], np.ndarray):
-                trace_json['x'] = trace_json['x'].tolist()
-            if 'y' in trace_json and isinstance(trace_json['y'], np.ndarray):
-                trace_json['y'] = trace_json['y'].tolist()
-            data.append(trace_json)
-        layout = plot.to_plotly_json()["layout"]
-        config = {'autosizable': True, 'responsive': True}
-        return {
-            "data": data,
-            "layout": layout,
-            "config": config
-        }
+        return json.loads(plot.to_json())
